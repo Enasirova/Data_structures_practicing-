@@ -5,10 +5,8 @@ public struct BinarySearchTree<Element: Comparable> { //binary search trees can 
     public private(set) var root: BinaryNode<Element>?
 
     public init() {}
-
 }
-
-
+    
 extension BinarySearchTree: CustomStringConvertible {
 
     public var description: String {
@@ -33,11 +31,77 @@ extension BinarySearchTree {
             node.rightChild = insert(from: node.rightChild, value: value)
         }
 
-        return node //makes assignment of the form root = insert(from: root, value: value) possible, as insert will either create node (if it was nil) or return node (if it was not nil)
+        //for AVL tree
+        let balancedNode = balanced(node) //instead of returning node directly after inserting, you pass it into balanced -> so we ensure every node in the call stack is checkd for balancing
+        balancedNode.height = max(balancedNode.leftHeight, balancedNode.rightHeight) + 1 //we need to update node's height
+        return balancedNode
+
+//        return node //makes assignment of the form root = insert(from: root, value: value) possible, as insert will either create node (if it was nil) or return node (if it was not nil)
     }
 
     public mutating func insert(_ value: Element) {
         root = insert(from: root, value: value)
+    }
+
+}
+//For AVL tree
+extension BinarySearchTree {
+    private func leftRotate(_ node: BinaryNode<Element>) -> BinaryNode<Element> {
+        //the right child is chosen as a pivot -> this node will replace the rotated node as the root of the subtree (it will move up the level)
+        let pivot = node.rightChild!
+        //the node to be rotated will become a left child of the pivot
+        node.rightChild = pivot.leftChild
+        //
+        pivot.leftChild = node
+        //
+        node.height = max(node.leftHeight, node.rightHeight) + 1 //25 moves one level down: used to be: leftHeight = -1; rightHight 1 -> maximum is 1 and + 1 = 2
+        pivot.height = max(pivot.leftHeight, pivot.rightHeight) + 1 // -1, 0 = 1 looks like we just counted the hights before the rotation
+        //
+        return pivot
+    }
+
+private func rightRotate(_ node: BinaryNode<Element>) -> BinaryNode<Element> {
+  let pivot = node.leftChild!
+  node.leftChild = pivot.rightChild
+  pivot.rightChild = node
+  node.height = max(node.leftHeight, node.rightHeight) + 1
+  pivot.height = max(pivot.leftHeight, pivot.rightHeight) + 1
+  return pivot
+}
+
+    private func rightLeftRotate(_ node: BinaryNode<Element>) -> BinaryNode<Element> {
+        guard let rightChild = node.rightChild else {
+            return node
+        }
+        node.rightChild = rightRotate(rightChild)
+        return leftRotate(node)
+    }
+
+    private func leftRightRotate(_ node: BinaryNode<Element>) -> BinaryNode<Element> {
+      guard let leftChild = node.leftChild else {
+        return node
+      }
+      node.leftChild = leftRotate(leftChild)
+      return rightRotate(node)
+    }
+
+    private func balanced(_ node: BinaryNode<Element>) -> BinaryNode<Element> {
+      switch node.balanceFactor {
+      case 2: //balance factor of 2 suggests that the left child is heavier -> so we need to use either right rotation or leftRight rotation
+        if let leftChild = node.leftChild, leftChild.balanceFactor == -1 {
+          return leftRightRotate(node)
+        } else {
+          return rightRotate(node)
+        }
+      case -2: //right child is heavier..
+        if let rightChild = node.rightChild, rightChild.balanceFactor == 1 {
+          return rightLeftRotate(node)
+        } else {
+          return leftRotate(node)
+        }
+      default:
+        return node //particular node is balanced -> so do nothing and just return the node
+      }
     }
 
 }
@@ -108,6 +172,8 @@ extension BinarySearchTree {
         } else {
             node.rightChild = remove(node: node.rightChild, value: value)
         }
-return node
+let balancedNode = balanced(node) //instead of returning node directly after inserting, you pass it into balanced -> so we ensure every node in the call stack is checkd for balancing
+balancedNode.height = max(balancedNode.leftHeight, balancedNode.rightHeight) + 1 //we need to update node's height
+return balancedNode
     }
 }

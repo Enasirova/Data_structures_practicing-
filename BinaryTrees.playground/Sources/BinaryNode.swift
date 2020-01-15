@@ -6,6 +6,19 @@ public class BinaryNode<Element> {
     public var leftChild: BinaryNode?
     public var rightChild: BinaryNode?
 
+    //for AVL tree
+    public var height = 0
+    public var leftHeight: Int {
+        return leftChild?.height ?? -1
+    }
+    public var rightHeight: Int {
+        return rightChild?.height ?? -1
+    }
+    public var balanceFactor: Int {
+        return leftHeight - rightHeight
+    }
+
+
     public init(value: Element) {
         self.value = value
     }
